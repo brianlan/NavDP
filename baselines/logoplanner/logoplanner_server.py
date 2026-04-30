@@ -12,7 +12,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--port",type=int,default=8888)
+parser.add_argument("--port",type=int,default=43020)
 parser.add_argument("--checkpoint",type=str,default="./logoplanner_policy.ckpt")
 args = parser.parse_known_args()[0]
 
@@ -56,6 +56,14 @@ def logoplanner_reset_env():
     global logoplanner_navigator
     logoplanner_navigator.reset_env(int(request.get_json().get('env_id')))
     return jsonify({"algo":"logoplanner"})
+
+@app.route("/finalize",methods=['POST'])
+def logoplanner_finalize():
+    global logoplanner_fps_writer
+    if logoplanner_fps_writer is not None:
+        logoplanner_fps_writer.close()
+        logoplanner_fps_writer = None
+    return jsonify({"algo":"logoplanner","status":"closed"})
 
 @app.route("/pointgoal_step",methods=['POST'])
 def logoplanner_step_xy():

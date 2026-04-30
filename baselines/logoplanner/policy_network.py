@@ -126,9 +126,7 @@ class LoGoPlanner_Policy(nn.Module):
             
             all_trajectory = torch.cumsum(naction / 4.0, dim=1)
             all_trajectory = all_trajectory.reshape(start_goal.shape[0],sample_num,self.predict_size,3)
-            trajectory_length = all_trajectory[:,:,-1,0:2].norm(dim=-1)
-            all_trajectory[trajectory_length < 0.5] = all_trajectory[trajectory_length < 0.5] * torch.tensor([[[0,0,1.0]]],device=all_trajectory.device)
-            
+
             sorted_indices = (-critic_values).argsort(dim=1)
             topk_indices = sorted_indices[:,0:2]
             batch_indices = torch.arange(start_goal.shape[0]).unsqueeze(1).expand(-1, 2)
