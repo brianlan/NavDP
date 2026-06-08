@@ -3,7 +3,7 @@ from omni.isaac.lab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description="A script to run a car control simulation")
 parser.add_argument(
-    "--scene_dir", type=str, default="/home/PJLAB/caiwenzhe/Desktop/NavDP/assets/scenes/cluttered_hard")
+    "--scene_dir", type=str, default="./assets/scenes/cluttered_hard")
 parser.add_argument(
     "--scene_index", type=int, default=8)
 parser.add_argument(
