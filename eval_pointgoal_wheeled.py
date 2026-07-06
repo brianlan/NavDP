@@ -1,4 +1,11 @@
 import argparse
+import os
+# IsaacSim prepends its own pip archives at runtime. Preload the environment's
+# compatible AWS SDK packages so Replicator camera initialization does not mix
+# old bundled boto3 with a different botocore.
+import boto3  # noqa: F401
+import botocore  # noqa: F401
+import s3transfer  # noqa: F401
 from omni.isaac.lab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description="A script to run a car control simulation")
@@ -19,6 +26,17 @@ parser.add_argument(
 parser.add_argument(
     "--port", type=int, default=8888)
 args_cli = parser.parse_args()
+if os.environ.get("NAVDP_RENDER_QUALITY") == "high":
+    import sys
+
+    sys.argv.extend(
+        [
+            "--/rtx/directLighting/sampledLighting/samplesPerPixel=16",
+            "--/rtx/post/dlss/execMode=2",
+            "--/rtx/ambientOcclusion/enabled=true",
+            "--/rtx/raytracing/cached/enabled=true",
+        ]
+    )
 app_launcher = AppLauncher(headless=True, enable_cameras=True)
 simulation_app = app_launcher.app
 
@@ -27,7 +45,6 @@ import cv2
 import carb
 import numpy as np
 import imageio
-import os
 import csv
 import torch
 import open3d as o3d
@@ -40,6 +57,7 @@ from wheeled_robots.controllers.differential_controller import DifferentialContr
 import torchvision.transforms as F
 import time
 import threading
+import re
 
 from utils_tasks.basic_utils import PlanningInput, PlanningOutput, find_usd_path, write_metrics, draw_box_with_text,adjust_usd_scale
 from configs.robots import *
@@ -56,6 +74,21 @@ output_lock = threading.Lock()
 stop_event = threading.Event()
 vis_manager = [VisualizationManager(history_size=5) for i in range(args_cli.num_envs)]
 mpc = None
+
+def scene_sort_key(name):
+    parts = re.split(r"(\d+)", name)
+    return [int(part) if part.isdigit() else part for part in parts]
+
+def list_valid_scene_dirs(scene_dir):
+    scene_names = []
+    for name in os.listdir(scene_dir):
+        path = os.path.join(scene_dir, name)
+        if not os.path.isdir(path):
+            continue
+        has_usd = any(file_name.endswith(".usd") and "noMDL" not in file_name for file_name in os.listdir(path))
+        if has_usd:
+            scene_names.append(name)
+    return sorted(scene_names, key=scene_sort_key)
 
 def planning_thread(env, camera_intrinsic):
     global mpc
@@ -130,8 +163,20 @@ def planning_thread(env, camera_intrinsic):
         # Small sleep to prevent CPU overload
         time.sleep(0.1)
 
-scene_path = os.path.join(args_cli.scene_dir,os.listdir(args_cli.scene_dir)[args_cli.scene_index]) + "/"
+scene_names = list_valid_scene_dirs(args_cli.scene_dir)
+if not scene_names:
+    raise FileNotFoundError(f"No valid scene directories with USD files found under: {args_cli.scene_dir}")
+if args_cli.scene_index < 0 or args_cli.scene_index >= len(scene_names):
+    raise IndexError(
+        f"scene_index {args_cli.scene_index} is out of range for {args_cli.scene_dir}. "
+        f"Valid range is 0..{len(scene_names) - 1}; scenes: {scene_names}"
+    )
+scene_path = os.path.join(args_cli.scene_dir,scene_names[args_cli.scene_index]) + "/"
 usd_path,init_path = find_usd_path(scene_path,task='pointgoal')
+if not usd_path:
+    raise FileNotFoundError(f"USD file not found in selected scene directory: {scene_path}")
+if not init_path:
+    raise FileNotFoundError(f"pointgoal_start_goal_pairs.npy not found in selected scene directory: {scene_path}")
 scene_config = PointNavSceneCfg()
 scene_config.num_envs = args_cli.num_envs
 scene_config.env_spacing = 0.0
