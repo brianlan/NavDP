@@ -34,6 +34,15 @@ class PointGoalDenoiser(torch.nn.Module):
         return self.policy.predict_noise(last_actions, timestep, goal_embed, rgbd_embed)
 
 
+class PointGoalEncoder(torch.nn.Module):
+    def __init__(self, policy):
+        super().__init__()
+        self.point_encoder = policy.point_encoder
+
+    def forward(self, point_goal):
+        return self.point_encoder(point_goal).unsqueeze(1)
+
+
 class Critic(torch.nn.Module):
     def __init__(self, policy):
         super().__init__()
@@ -91,11 +100,13 @@ def main():
     depths = torch.rand(batch, 224, 224, 1, device=args.device)
     last_actions = torch.randn(denoise_batch, 24, 3, device=args.device)
     timestep = torch.tensor([9], dtype=torch.float32, device=args.device)
+    point_goal = torch.randn(batch, 3, device=args.device)
     goal_embed = torch.randn(denoise_batch, 1, 384, device=args.device)
     rgbd_embed = torch.randn(denoise_batch, 128, 384, device=args.device)
 
     with torch.no_grad():
         print("rgbd_encoder output:", RGBDEncoder(policy)(images, depths).shape)
+        print("pointgoal_encoder output:", PointGoalEncoder(policy)(point_goal).shape)
         print("denoiser output:", PointGoalDenoiser(policy)(last_actions, timestep, goal_embed, rgbd_embed).shape)
         print("critic output:", Critic(policy)(last_actions, rgbd_embed).shape)
 
@@ -106,6 +117,13 @@ def main():
         os.path.join(args.output_dir, f"navdp_rgbd_encoder_{suffix}.onnx"),
         ["images", "depths"],
         ["rgbd_embed"],
+    )
+    export_and_check(
+        PointGoalEncoder(policy),
+        (point_goal,),
+        os.path.join(args.output_dir, f"navdp_pointgoal_encoder_{suffix}.onnx"),
+        ["point_goal"],
+        ["goal_embed"],
     )
     export_and_check(
         PointGoalDenoiser(policy),
