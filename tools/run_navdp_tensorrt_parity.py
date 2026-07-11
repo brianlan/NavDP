@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument("--output", required=True, help="Output NPZ with actual TensorRT results.")
     parser.add_argument("--suffix", default="fp32", help="Engine suffix, usually fp32 or fp16.")
     parser.add_argument("--repeat", type=int, default=1, help="Number of full pipeline runs for timing.")
+    parser.add_argument("--cached-rgbd", action="store_true", help="Use split RGB-frame/depth/fusion engines.")
     return parser.parse_args()
 
 
@@ -179,7 +180,18 @@ def engine_path(engine_dir, stem, suffix):
 
 
 def run_pipeline(args, bundle, engines):
-    rgbd_embed = engines["rgbd"].run(images=bundle["images"], depths=bundle["depths"])["rgbd_embed"].astype(np.float32)
+    if args.cached_rgbd:
+        rgb_token_blocks = []
+        for frame_index in range(bundle["images"].shape[1]):
+            frame_tokens = engines["rgb_frame"].run(image=bundle["images"][:, frame_index])["rgb_tokens"].astype(np.float32)
+            rgb_token_blocks.append(frame_tokens)
+        rgb_tokens = np.concatenate(rgb_token_blocks, axis=1)
+        depth_tokens = engines["depth_frame"].run(depth=bundle["depths"])["depth_tokens"].astype(np.float32)
+        rgbd_embed = engines["rgbd_fusion"].run(rgb_tokens=rgb_tokens, depth_tokens=depth_tokens)["rgbd_embed"].astype(np.float32)
+    else:
+        rgb_tokens = None
+        depth_tokens = None
+        rgbd_embed = engines["rgbd"].run(images=bundle["images"], depths=bundle["depths"])["rgbd_embed"].astype(np.float32)
     goal_embed = engines["pointgoal"].run(point_goal=bundle["point_goal"])["goal_embed"].astype(np.float32)
     sample_num = bundle["initial_action"].shape[0] // bundle["point_goal"].shape[0]
     rgbd_embed_repeated = np.repeat(rgbd_embed, sample_num, axis=0)
@@ -216,6 +228,8 @@ def run_pipeline(args, bundle, engines):
     selected_trajectory = all_trajectory[np.arange(batch_size)[:, None], selected_indices]
     return {
         "rgbd_embed": rgbd_embed,
+        "rgb_tokens": rgb_tokens if rgb_tokens is not None else np.empty((0,), dtype=np.float32),
+        "depth_tokens": depth_tokens if depth_tokens is not None else np.empty((0,), dtype=np.float32),
         "goal_embed": goal_embed,
         "rgbd_embed_repeated": rgbd_embed_repeated,
         "goal_embed_repeated": goal_embed_repeated,
@@ -234,11 +248,20 @@ def main():
     bundle = np.load(args.bundle)
     cuda = CudaRuntime()
     engines = {
-        "rgbd": TrtEngine(engine_path(args.engine_dir, "navdp_rgbd_encoder_b1_s16", args.suffix), cuda),
         "pointgoal": TrtEngine(engine_path(args.engine_dir, "navdp_pointgoal_encoder_b1_s16", args.suffix), cuda),
         "denoiser": TrtEngine(engine_path(args.engine_dir, "navdp_pointgoal_denoiser_b1_s16", args.suffix), cuda),
         "critic": TrtEngine(engine_path(args.engine_dir, "navdp_critic_b1_s16", args.suffix), cuda),
     }
+    if args.cached_rgbd:
+        engines.update(
+            {
+                "rgb_frame": TrtEngine(engine_path(args.engine_dir, "navdp_rgb_frame_encoder_b1", args.suffix), cuda),
+                "depth_frame": TrtEngine(engine_path(args.engine_dir, "navdp_depth_frame_encoder_b1", args.suffix), cuda),
+                "rgbd_fusion": TrtEngine(engine_path(args.engine_dir, "navdp_rgbd_fusion_b1", args.suffix), cuda),
+            }
+        )
+    else:
+        engines["rgbd"] = TrtEngine(engine_path(args.engine_dir, "navdp_rgbd_encoder_b1_s16", args.suffix), cuda)
 
     result = None
     start = time.perf_counter()

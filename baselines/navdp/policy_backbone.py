@@ -55,8 +55,8 @@ class NavDP_RGBD_Backbone(nn.Module):
         self.former_pe = LearnablePositionalEncoding(384,(self.memory_size+1)*256) 
         self.former_net = nn.TransformerDecoder(nn.TransformerDecoderLayer(384,8,batch_first=True),2)
         self.project_layer = nn.Linear(384,embed_size)
-        
-    def forward(self,images,depths):
+
+    def encode_rgb(self, images):
         with torch.no_grad():
             if len(images.shape) == 4:
                 tensor_images = torch.as_tensor(images,dtype=torch.float32,device=self.device).permute(0,3,1,2)
@@ -69,6 +69,12 @@ class NavDP_RGBD_Backbone(nn.Module):
                 tensor_images = tensor_images.reshape(-1,3,self.image_size,self.image_size)
                 tensor_norm_images = (tensor_images - self.preprocess_mean.reshape(1,3,1,1).to(self.device))/self.preprocess_std.reshape(1,3,1,1).to(self.device)
                 image_token = self.rgb_model.get_intermediate_layers(tensor_norm_images)[0].reshape(B,T*256,-1)
+            else:
+                raise ValueError(f"Unsupported image rank: {len(images.shape)}")
+            return image_token
+
+    def encode_depth(self, depths):
+        with torch.no_grad():
             if len(depths.shape) == 4:
                 tensor_depths = torch.as_tensor(depths,dtype=torch.float32,device=self.device).permute(0,3,1,2)
                 tensor_depths = tensor_depths.reshape(-1,1,self.image_size,self.image_size)
@@ -80,11 +86,22 @@ class NavDP_RGBD_Backbone(nn.Module):
                 tensor_depths = tensor_depths.reshape(-1,1,self.image_size,self.image_size)
                 tensor_depths = torch.concat([tensor_depths,tensor_depths,tensor_depths],dim=1)
                 depth_token = self.depth_model.get_intermediate_layers(tensor_depths)[0].reshape(B,T*256,-1)
+            else:
+                raise ValueError(f"Unsupported depth rank: {len(depths.shape)}")
+            return depth_token
+
+    def fuse_tokens(self, image_token, depth_token):
+        with torch.no_grad():
             former_token = torch.concat((image_token,depth_token),dim=1) + self.former_pe(torch.concat((image_token,depth_token),dim=1))
             former_query = self.former_query(torch.zeros((image_token.shape[0], self.memory_size * 16, 384),device=self.device))
             memory_token = self.former_net(former_query,former_token)
             memory_token = self.project_layer(memory_token)
             return memory_token
+
+    def forward(self,images,depths):
+        image_token = self.encode_rgb(images)
+        depth_token = self.encode_depth(depths)
+        return self.fuse_tokens(image_token,depth_token)
 
 class NavDP_ImageGoal_Backbone(nn.Module):
     def __init__(self,

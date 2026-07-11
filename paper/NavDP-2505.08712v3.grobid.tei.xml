@@ -1,0 +1,1545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">NavDP: Learning Sim-to-Real Navigation Diffusion Policy with Privileged Information Guidance</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-12-24">24 Dec 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Wenzhe</forename><surname>Cai</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaqi</forename><surname>Peng</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yuqiang</forename><surname>Yang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yujian</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Meng</forename><surname>Wei</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hanqing</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yilun</forename><surname>Chen</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tai</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jiangmiao</forename><surname>Pang</surname></persName>
+						</author>
+						<title level="a" type="main">NavDP: Learning Sim-to-Real Navigation Diffusion Policy with Privileged Information Guidance</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-12-24">24 Dec 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4C96F3A33D86E53F44208BDBCB73FC0C</idno>
+					<idno type="arXiv">arXiv:2505.08712v3[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.3-SNAPSHOT" ident="GROBID" when="2026-06-21T07:57+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">933f01c</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[persName,figure,ref,biblStruct,formula,s], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Learning to navigate in dynamic and complex open-world environments is a critical yet challenging capability for autonomous robots. Existing approaches often rely on cascaded modular frameworks, which require extensive hyperparameter tuning or learning from limited real-world demonstration data. In this paper, we propose Navigation Diffusion Policy (NavDP), an end-to-end network trained solely in simulation that enables zero-shot sim-to-real transfer across diverse environments and robot embodiments. The core of NavDP is a unified transformer-based architecture that jointly learns trajectory generation and trajectory evaluation, both conditioned solely on local RGB-D observation. By learning to predict critic values for contrastive trajectory samples, our proposed approach effectively leverages supervision from privileged information available in simulation, thereby fostering accurate spatial understanding and enabling the distinction between safe and dangerous behaviors. To support this, we develop an efficient data generation pipeline in simulation and construct a large-scale dataset encompassing over one million meters of navigation experience across 3,000 scenes. Empirical experiments in both simulated and real-world environments demonstrate that NavDP significantly outperforms prior state-of-theart methods. Furthermore, we identify key factors influencing the generalization performance of NavDP. The dataset and code are publicly available at <ref type="url" target="https://wzcai99.github.io/navigation-diffusion-policy.github.io">https://wzcai99.github.io/navigation- diffusion-policy.github.io</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Navigation in dynamic open world is a fundamental yet challenging skill for robots. For pursuing embodied intelligent generalists, the navigation system is expected to be capable of zero-shot generalizing across different embodiment and unstructured scenes. However, the traditional modularbased methods suffer from system latency and compounding errors which limits their performance, while the scarcity of high-quality data limits the scale-up training and performance of learning-based methods. Although several studies try to address this problem by collecting robot trajectories in the real world <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>, the scaling process is still time-consuming and expensive.</p><p>In contrast, simulation data is diverse and scalable. With large-scale 3D digital replica scenes available <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b8">[9]</ref>, we can efficiently generate customized infinite navigation trajectories with different types of observations and goals. Furthermore, with the increasing diversity of 3D assets and rapid progress of neural rendering algorithms, the long-standing sim-to-real gap problem can also be alleviated. To learn generalized navigation policies, imitation learning <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b10">[11]</ref> typically rely on positive demonstrations, but they lack interaction and fail to incorporate negative feedback from the environment. In contrast, reinforcement learning (RL)-based methods <ref type="bibr" target="#b11">[12]</ref>, <ref type="bibr" target="#b12">[13]</ref> can learn from interactions with reward signals, but suffer from low data efficiency.</p><p>In this paper, we propose a novel end-to-end transformerbased learning framework to combine the advantages of these two streams, Navigation Diffusion Policy (NavDP), which achieves zero-shot sim-to-real policy transfer and crossembodiment generalization with only simulation data. Our proposed framework leverages the efficiency of imitation learning and the expressiveness of a diffusion process to model the multi-modal distribution of expert demonstrations. To enable counterfactual reasoning, we adapt the concept of the critic value function from reinforcement learning and train NavDP to predict state-action values for both positive and negative trajectories. Our framework can fully take advantages of the privileged information in the simulation from two aspects: On the one hand, the trajectory generation can be trained under the guidance from global-optimal planner within simulation environments. On the other hand, the critic function can learn from arbitrary generated contrastive action samples with the global Euclidean Signed Distance Field (ESDF) available in simulation as a fine-grained guidance. To support large-scale training of NavDP, we developed a highly efficient navigation data engine capable of generating 2,500 trajectories per GPU per day-achieving a 20× improvement in efficiency over real-world data collection. This enables the creation of a comprehensive dataset encompassing over one million meters of robot navigation experience across 3,000 diverse scenes. We conduct extensive empirical evaluations in both simulated and real-world environments. The results demonstrate our proposed NavDP outperforms the previous state-of-the-art approaches by a large margin.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. RELATED WORKS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Robot Diffusion Policy.</head><p>Advanced generative models have shown great potential in capturing multimodal distribution of robot policy learning. The diffusion policy <ref type="bibr" target="#b13">[14]</ref> was the first to introduce the diffusion process into manipulation tasks, sparking numerous efforts to enhance its capabilities. These enhancements span various aspects, including state representations <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref>, inference speed <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b19">[20]</ref>, and deployment across diverse robot applications <ref type="bibr" target="#b20">[21]</ref>, <ref type="bibr" target="#b21">[22]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref>. However, as diffusion policies operate within an offline imitation learning framework, achieving strong real-world performance often depends on real-world teleop-</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scalable Navigation DataEngine</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Supervision</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Supervision</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Generation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Selection</head><p>start end obstacle obstacle safe Navigation Diffusion Policy (No Real-Robot Data) Accessible for shorter robot Prohibited for taller robot Parallel Rendering Domain Randomization Embodiment-Aware Planning Massive Simulation Replica Light Texture View Cross-Embodiment Navigation in the Open World eration datasets, which are labor-intensive and challenging to scale up. In contrast, our approach develops robot policies entirely from scalable simulation datasets. To enhance generalization and ensure safety during sim-to-real transfer, we introduce a critic function to estimate the safety of policy outputs. This mechanism leverages prioritized simulation data to enable the diffusion policy to understand the consequences of actions, improving both safety and performance.</p><p>End-to-End Visual Navigation Models. Recent end-toend visual navigation models have demonstrated significant potential in cross-embodiment adaptation and multitask generalization <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b26">[27]</ref>, <ref type="bibr" target="#b27">[28]</ref>, <ref type="bibr" target="#b28">[29]</ref>, <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b30">[31]</ref>, <ref type="bibr" target="#b31">[32]</ref>. These approaches tackle navigation challenges at various levels of abstraction. Vision-Language-Action (VLA) models <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b30">[31]</ref>, <ref type="bibr" target="#b31">[32]</ref>, <ref type="bibr" target="#b32">[33]</ref> offer flexibility by leveraging language instructions for task specification. In contrast, endto-end local navigation models excel in cross-embodiment generalization and demonstrate superior adaptability with real-time inference in open-world environments <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b10">[11]</ref>. In this paper, we focus on developing efficient endto-end cross-embodiment navigation system-1 which can seamlessly attach to the VLM for generalizable navigation task execution skill in dynamic open-world.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. DATAENGINE</head><p>Robot Model. We build the robot as a cylindrical rigid body with a two-wheel differential drive model for cross-embodiment generalizability. The navigation safe radius of the robots is set to r b = 0.25m. To imitate the variation of observation views across different robot embodiments, we assume one RGB-D camera is installed on the top of the robot and the height of the robot h b is randomized in the range (0.25m, 1.25m). Objects that are higher than the camera's configuration height are not considered as obstacles during the navigation trajectory planning process. To ensure the local navigable area remains visible within the field of view, the camera's pitch angle is randomized within the range (-30 • , 0 • ), depending on the robot's height. We use two configurations to set the camera field of views, one follows RealSense D435i with horizontal field of view (HFOV) and vertical field of view (VFOV) set to (69 • , 42 • ), and the other follows Zed 2 with FOV set to (110 • , 70 • ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Generation.</head><p>To generate collision-free robot navigation trajectories, we first convert the scene meshes into a voxel map with a voxel size of 0.05m to estimate the Euclidean Signed Distance Field (ESDF) of the navigable areas. Navigable areas are defined as voxel elements with z-axis coordinates below the threshold h nav , while obstacle areas are defined as voxel elements with z-axis coordinates exceeding the threshold h obs . The thresholds h nav and h obs vary across scenes and depend on the robot height h b . Voxels with distance values lower than the robot radius r b are truncated to prevent collisions. The ESDF map of the navigable area is downsampled to 0.2m resolution to facilitate efficient A* path planning. Navigation start and target points are selected randomly on the navigable area, and the A* algorithm generates a planned path τ * = [(x 0 , y 0 ), (x 1 , y 1 ), (x 2 , y 2 ), . . . , (x k , y k )]. For each waypoint (x n , y n ), a greedy search is performed in a local area of the original ESDF map to refine the position by maximizing the distance to nearby obstacles. This refinement process shifts waypoints further from obstacles. Finally, the refined waypoints are smoothed into a continuous navigation trajectory using cubic spline interpolation.</p><p>Scene Assets and Render Engine. Following the pipeline described in the previous section, we can generate a largescale dataset of robot navigation trajectories and corresponding RGB-D rendering results across diverse scenes. We use BlenderProc <ref type="bibr" target="#b33">[34]</ref> to render photorealistic RGB and depth images along the navigation trajectories. We collect navigation trajectories from over 3,000 scenes selected from 3D-Front <ref type="bibr" target="#b5">[6]</ref>, HSSD <ref type="bibr" target="#b6">[7]</ref>, HM3D <ref type="bibr" target="#b7">[8]</ref>, Replica <ref type="bibr" target="#b3">[4]</ref>, Gibson <ref type="bibr" target="#b34">[35]</ref>, and Matterport3D <ref type="bibr" target="#b4">[5]</ref>. For each scene, we sample 100 pairs of starting points and destinations. We adapt several domain randomization techniques to further improve the data diversity, which contains light condition randomization, view randomization as well as texture randomization. After data filtering, the final dataset comprise over 200K trajectories covering more than 1M meters. Compared with the previous navigation dataset, our data dominates in diversity and collection efficiency as shown in Table <ref type="table">I</ref>. The dataset will be open-sourced in the near future.</p><p>Dataset Scene Distance (Km) Hour Image Collection GoStanford [1] 27 25.5 16.7 178K Teleop RECON [36] 9 152.5 40 610K Autonomous SCAND [2] 1 40 8.7 100K Teleop SACSoN [3] 5 58 75 241K Autonomous AMR [10] 54 --7.5M Simulation NavDP (ours) 3154 1627.1 452 40M Simulation TABLE I: Quantitative comparison of navigation datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. NAVIGATION DIFFUSION POLICY</head><p>NavDP consists of a multi-modal encoder to fuse RGB and depth observations and a unified transformer-based network for both trajectory generation and critic value prediction. The NavDP network architecture is shown in Figure <ref type="figure">2</ref>. The trajectory generation aims to plan M dense waypoints for robots to follow while the critic value prediction aims to predict scores corresponding to the safety of trajectories.</p><p>Multi-Modal Encoder. NavDP processes RGB-D images and a navigation goal as inputs. To incorporate historical information, we feed multi-frame RGB images of length N and use a pre-trained DepthAnything <ref type="bibr" target="#b36">[37]</ref> encoder to extract 256 patch tokens from each RGB frame. To ensure alignment with absolute physical scale for trajectory generation, we introduce an additional ViT encoder-trained from scratch-to process a single frame of depth observation, which also produces 256 tokens. As the depth input may suffer from sim-to-real gap, here we only use the depth within range (0.1m, 5m). To fuse the RGB-D inputs, we apply lightweight transformer decoder layers with learnable queries, compressing the original (N + 1) × 256 tokens into N × 16 compact tokens. The navigation goal follows the PointGoal task definition, where a 2-dimensional vector (x g , y g ) represents the goal's relative coordinates with respect to the current state. We employ MLP layers to encode the navigation goal and project it into the same dimensional space as the RGB-D tokens for subsequence process. For no-goal task, we use full-zero tensor as the goal embedding.</p><p>Actor Head Cri-c Head Transformer Decoder Block 🔥 Ac-on Encoding Mul--Modal Fusion Goal Encoding 🔥 🔥 DDPM Scheduler Data Augment RGB Encoder Depth Encoder 🔥 ❄ Noisy Trajectory Contras/ve Trajectory Expert Naviga/on Trajectory 🔥 PointGoal (x,y) Noise Predic/on Loss (Trajectory Genera/on) Cri/c Predic/on Loss (Trajectory Evalua/on) Mul/-Frame RGB Image Single-Frame Depth Image</p><p>Fig. <ref type="figure">2</ref>: Overview of the network architecture. NavDP is conditioned on RGB-D observations and navigation trajectories. During training, Gaussian noise is added to the ground-truth trajectory according to the DDPM scheduler, and the actor head is trained to predict the injected noise. Simultaneously, the ground-truth trajectories are augmented to create both collision-free and collision scenarios, and the critic head is trained to assign contrastive scores to these trajectories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Unified Policy Transformer.</head><p>We develop a simple yet effective transformer decoder-based architecture that supports both diffusion-based trajectory generation and trajectory evaluation. For trajectory generation, the objective is to predict the injected noise conditioned on a noisy trajectory. For trajectory evaluation, the goal is to predict a score conditioned on an arbitrary trajectory. To this end, we use an MLP-based action encoder to extract trajectory embeddings, which serve as queries in the cross-attention mechanism. The fused RGB-D tokens, along with a token representing the diffusion timestep, act as keys and values in the attention process. We employ multiple transformer decoder layers to process the input tokens and use two separate output heads for the two tasks. All network weights are shared between tasks; the distinction lies in the input queries and the attention masks applied to the keys and values. In the trajectory generation task, queries are extracted from noisy trajectories with noise added according to the DDPM <ref type="bibr" target="#b37">[38]</ref> scheduler, and cross-attention attends to all keys</p><p>a) Simulation -PointGoal b) Simulation -NoGoal c) RealWorld -PointGoal d) RealWorld -NoGoal</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Unitree Go2 Turtlebot4</head><p>Unitree G1 Turtlebot4 Unitree Go2 Unitree G1</p><p>Fig. <ref type="figure">3</ref>: An overview of the evaluation scenes, including both simulation and real-world. In simulation, we adapt 10 home scenes, 10 commercial scenes for point-goal task, and 10 scenes with clutter layout for no-goal task. In real-world, we evaluate different navigation policy on Turtlebot4, Unitree Go2, G1 and Galaxea R1 in both indoor and outdoor scenes.</p><p>and values. In the trajectory evaluation task, queries are derived from expert-demonstrated trajectories with random rotation augmentations, and the cross-attention excludes the timestep token. During inference, NavDP first generates a batch of candidate trajectories using the trajectory generation head and then selects the best trajectory via the evaluation head, thereby enabling safer task execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Training Details.</head><p>The training objectives for trajectory generation task is weighted sum of mean squared error (MSE) loss of both predicted noises for point-goal and nogoal tasks. Denote k as the denoising steps, ϵ k as the sampled noise following DDPM scheduler at timestep k, d t as the current depth image, I t-N :t as the RGB observations, g t as the navigation goal, τ as the expert demonstration trajectories without noise, D as the entire dataset, the loss function for actor head can be written as follows:</p><formula xml:id="formula_0">L ng act = E τ,g,d,I∼D [(ϵ k -ϵ θ (τ + ϵ k+1 , k, d t , I t-N :t )) 2 ] (1) L pg act = E τ,g,d,I∼D [(ϵ k -ϵ θ (τ +ϵ k+1 , k, g t , d t , I t-N :t )) 2 ] (2) L act = α • L ng act + β • L pg act (<label>3</label></formula><formula xml:id="formula_1">)</formula><p>We set α = 0.5 and β = 0.5 by default. ϵ θ is the entire noise prediction network. For the trajectory evaluation task, we define the label critic value with respect to both the absolute ESDF value and difference of ESDF value along the trajectory waypoints. Concretely, denote the augmented expert demonstration trajectory as τ , the ESDF value at m-th waypoint on the augmented trajectory as d m τ , the label critic value is defined as follows:</p><formula xml:id="formula_2">V (τ ) = γ• M m=0 (d m+1 τ -d m τ )+λ• 1 M M m=0 I(d m τ &lt; d saf e ) (<label>4</label></formula><formula xml:id="formula_3">)</formula><p>d saf e is a threshold representing the collision radius. Then, denote the score prediction network as V θ , the loss function for critic head can be written as the follows:</p><formula xml:id="formula_4">L critic = E I,d,τ ∼D [V (τ ) -V θ (I t-N :t , D t , τ )]<label>(5)</label></formula><p>And the whole NavDP network is jointly trained in one stage with respect to the sum over L act and L critic . Some other hyper-parameters are shown in Table <ref type="table">II</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hyper-parameters Value</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Diffusion Step 10 Prediction Waypoints</head><p>M 24 RGB History Size N 8 Safe Distance Threshold d saf e 0.5 Training GPU 32 A100 cards Training Batchsize 2048 Learning Rate 1e-4 Learning Rate Decay Linear Training GPU Hours 24×32 TABLE II: Table of hyper-parameters of training. V. EXPERIMENTS</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Evaluation and Metrics</head><p>We evaluate our approach with point-goal navigation and no-goal exploration tasks across 4 different robots in both simulation and real-world. We build the simulation benchmark based on IsaacSim which offers high-fiedlity physical simulation and use a wheeled robot -ClearPath Dingo as the navigator. For point-goal navigation task, we collect 20 realistic scenes (10 home, 10 commercial) from GRUtopia <ref type="bibr" target="#b8">[9]</ref>, covering a wide range of scenarios including home, hospital, supermarket, etc. For no-goal navigation task, we generate 10 challenging cluttered scenes with random obstacles as the for evaluation. We evaluate 2,000 episodes for point-goal task and 1,000 episodes for no-goal task.</p><p>In real-world benchmark, we evaluate the performance of Unitree Go2, Turtlebot4 and Unitree G1. For the pointgoal navigation task, we setup 3 different indoor scenarios with challenging layout and evaluate 10 episodes for each scene with one embodiment. For the no-goal exploration</p><p>Point-Goal Nav Dingo-Sim Cross-Embodiment Real-world SR(↑) SPL(↑) SR(↑) Turtlebot(↑) Unitree-Go2(↑) Unitree-G1(↑) DD-PPO [39] 8.6 8.5 ----EgoPlanner [40] --40.0 5/10 3/10 -iPlanner [27] 54.1 51.2 16.7 0/10 5/10 0/10 ViPlanner [28] 60.9 58.6 53.3 5/10 4/10 7/10 NavDP (Ours) 67.2 62.6 76.7 9/10 7/10 7/10</p><p>TABLE III: Quantitative Evaluation Results of Point-Goal Navigation. We report both detailed success rate for each embodiment and the overall success rate in real-world experiments. Our proposed NavDP outperforms the previous stateof-the-art approach in simulation by 6.3% success rate and 4.0% SPL, 23.4% success rate in real-world evaluation. No-Goal Nav Dingo-Sim Cross-Embodiment Real-world Time(↑) Area(↑) Time(↑) Turtlebot(↑) Unitree-Go2(↑) Unitree-G1(↑) GNM [25] 12.5 29.6 15.2 9.9 12.9 23.0 ViNT [26] 18.9 46.6 13.1 15.6 15.8 8.0 NoMad [11] 36.6 85.7 29.3 17.4 37.2 33.5 NavDP (Ours) 106.2 274.1 112.9 114.2 143.3 81.3</p><p>TABLE IV: Quantitative Evaluation Results of No-Goal Navigation. We report both detailed exploration time for each embodiment and the overall time. Our proposed NavDP achieves a nearly 2.9x performance in exploration time and 3.1x in exploration area better than the previous method in simulation, and 3.8x performance in real-world exploration time.</p><p>task, we evaluate the cross-embodiment generalization in another 3 large indoor scenarios, including corridor, hall and meeting room. A brief visualization of the simulation and real-world evaluation scenarios are provided in Figure <ref type="figure">3</ref>. In point-goal navigation task, we evaluate two metrics: Success Rate (SR) and Success Weighted by Path Length (SPL), which measures task completion ratio and path efficiency.</p><p>In no-goal navigation task, we evaluate another two metrics -Time and Area, which represents the the average time in seconds before one collision happens and the average exploration areas. Both help evaluates the overall collision avoidance skill and planning consistency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Experiment Analysis</head><p>In this section, we aim to address the following research questions through both quantitative and qualitative experimental results:</p><p>• Q1: How well does the proposed NavDP generalize across different robot platforms? • Q2: What are the advantages of our method compared to baseline approaches? • Q3: How well does our method generalize to in-thewild indoor and outdoor environments? • Q4: What are the key factors that influence the overall performance of the model? • Q5: Is the domain randomization in navigation data essential for achieving cross-embodiment generalization? For Q1 and Q2, we compare our proposed NavDP with a range of baseline methods across both navigation tasks. The baselines include learning-based approaches -GNM <ref type="bibr" target="#b24">[25]</ref>, ViNT <ref type="bibr" target="#b25">[26]</ref>, NoMaD <ref type="bibr" target="#b10">[11]</ref>, DD-PPO <ref type="bibr" target="#b38">[39]</ref>, iPlanner <ref type="bibr" target="#b26">[27]</ref>, and ViPlanner <ref type="bibr" target="#b27">[28]</ref>, as well as the planning-based approach EgoPlanner <ref type="bibr" target="#b39">[40]</ref>. In the PointGoal navigation task, NavDP outperforms the previous state-of-the-art learningbased method by 6.3% in Success Rate (SR) within simulation and achieves an average improvement of 23.0% in cross-embodiment real-world experiments (as shown in Table <ref type="table">III</ref>). In contrast, despite the baseline method DD-PPO has been extensively trained with reinforcement learning in the Habitat simulator, it demonstrates poor generalization to out-of-distribution scenarios with different action spaces and camera configurations. Compared with other approaches, our proposed NavDP offers three key advantages:</p><p>• Temporal Consistency: iPlanner and ViPlanner rely on single-frame visual input, which restricts temporal consistency in trajectory planning. This limitation often leads to task failure or inefficient behaviors, particularly in the Turtlebot experiment, where the robot camera has already passed obstacles but the body is not. Then, a severe change in path planning can lead to collision.</p><p>• Robustness to Depth Noise: Traditional planning-based approaches are highly sensitive to noisy depth sensing. In such cases, global mapping errors can result in overly conservative plans, while short-horizon local maps can also cause planning inconsistencies and collisions.</p><p>• Resistance to Depth Illusions: As depth-centric methods, both iPlanner and ViPlanner are susceptible to misleading object geometries. In the Unitree-Go2 experiments, we place obstacles with holes in front of the robot. Both methods failed to interpret the geometry correctly and trying to walk through the obstacles. Quanlitive visualization of the results from different approaches for point-goal navigation task is presented in Figure <ref type="figure" target="#fig_3">4</ref>. The detail navigation process is provided in the supplimentary video. Besides, our proposed method also surpass the baseline methods in no-goal navigation task by a large margin: In simulation, NavDP achieves 2.9x performance in average exploration time and 3.1x performance in average exploration area than NoMad in simulation and 3.8x exploration time in real-world, demonstrating a strong zeroshot generalization to out-of-distribution scenarios.</p><p>For Q3, we deploy NavDP on the Unitree Go2, Unitree G1 and Galaxea R1 robot and visualize the top-2 generated trajectories with the best critic values as shown in Figure <ref type="figure" target="#fig_4">5</ref>. Although the observation views, the existance of pedestrain interference, camera field of views, varying light conditions, the existence of motion blur dramatically make the observation images different from the training dataset, our proposed method still generalize well and can achieve long-horizon navigation without any collision and human intervention over 100 meters. More examples are shown in the appendix video.</p><p>For Q4, we conduct a comprehensive ablation study on the point-goal navigation benchmark to investigate three critical factors that may influence the overall performance of NavDP: (1) input modalities, (2) the function of the critic prediction, and (3) the choice of training objectives. Specifically, we evaluate six variants of the original NavDP model:</p><formula xml:id="formula_5">• w/o</formula><p>Depth * : An RGB-only version of the NavDP model, with the depth input branch removed. • w/o RGB * : A depth-only version of the NavDP model, PointNav Sim-Home Sim-Commercial Success SPL Success SPL w/o Depth * 47.8 44.3 66.1 63.7 w/o RGB * 53.9 49.6 70.3 66.7 w/o Multiframe RGB * 56.9 51.7 72.0 68.2 w/o Selection 53.1 49.0 65.6 62.5 w/o Augmentation * 57.3 52.2 73.4 69.2 w/o No-Goal * 56.8 51.6 73.5 69.9 Original NavDP 60.3 54.7 74.1 70.5 TABLE V: Quantitative results of ablation experiments.</p><p>with the RGB input branch removed.</p><p>• w/o Multiframe RGB * : A single-frame RGB-D variant of NavDP, replacing multi-frame RGB input with a single-frame representation.</p><p>• w/o Selection: A variant of NavDP where the trajectory selection is randomized instead of using the critic-based selection scheme.</p><p>• w/o Augmentation * : A version of NavDP where collision trajectories are excluded during critic head training, disabling the trajectory augmentation scheme.</p><p>• w/o No-Goal * : A variant of NavDP trained without the no-goal-based auxiliary trajectory prediction objectives. Variants marked with an asterisk ( * ) indicate that the model is retrained using the same configuration and dataset as the original NavDP. In contrast, variants without an asterisk share the same model weights as the original NavDP. The ablation results are presented in Table V. These results highlight three key technical conclusions:</p><p>• RGB-D fusion is essential for a more robust navigation performance. Without the depth as input, the overall performance drops 10.3% in success rate and without the rgb images as input, the overall performance drops 5.1%. Multi-frame of RGB input also contributes 2.8% improvements in success rate.</p><p>• Critic function plays an important role for improving the planning safety. With the same model weights but removing the critic-based trajectory selection, the success rate decreases 7.8% in simulation. Learning critic function from contrastive samples is also important. After removing the trajectory augmentation for critic training, the success drops 3.0% in home scenes.</p><p>• The no-goal task is a useful auxiliary task that can be jointly trained. With the no-goal task training objectives, the overall point-goal navigation performance increase 2.1% in success rate and 1.8% in SPL.</p><p>For Q5, we train a variant of NavDP model only with the data collected at low robot heights (&lt; 0.5m) and camera view to prove whether the domain randomization contributes to the cross-embodiment generalization. Then, we setup two challenging scenarios with cluttered layout and evaluates point-goal navigation task performance of two models with both Unitree-Go2 and Galaxea-R1 robots. Each scene is evaluate for 20 episodes for each embodiment. As two robots are different in heights, their path planning strategy should be different: For the Unitree-Go2, it would be an efficient way to walk under the table in SceneB, but the Galaxea R1 must take a detour to avoid the table. The quantitative results are shown in Figure <ref type="figure" target="#fig_5">6</ref>. We find that without the cross-embodiment data, the detour skill for the table is not exhibited, thus leading to a success rate drops from 90% to 20%, while the overall performance on Unitree-Go2 is maintained.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION &amp; FUTURE WORKS</head><p>In this paper, we introduce a novel navigation diffusion policy (NavDP) that achieves strong zero-shot sim-toreal and cross-embodiment generalization performance. Our policy demonstrates real-time path-planning and collisionavoidance abilities under both static and dynamic scenarios. The top row demonstrates the evaluation scenes while the bottom shows the performance. Without the crossembodiment data, the performance on Galaxea R1 drops 70% in success rate.</p><p>Two key ingredients contributes to the NavDP performance. The first is our proposed automatic data generation pipeline and large-scale simulation navigation dataset. The second is the design of the entire network with efficient RGB-D fusion and contrastive critic training. Our NavDP provides a novel perspective in building versatile end-to-end navigation policies and a strong backbone for further improvements.</p><p>For future work, we plan to explore efficient post-training strategies to further enhance performance-an essential step for real-world deployment. Additionally, we aim to extend NavDP to support a wider range of navigation goals, particularly those expressed through natural language instructions. Finally, integrating a global memory mechanism to enable long-term exploration and more holistic navigation behavior represents another promising direction for future research.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 1 :</head><label>1</label><figDesc>Fig.1: NavDP is solely trained with simulation data but can achieve zero-shot sim-to-real transfer to different types of robots. By learning from the prioritized knowledge in the simulation data, NavDP forms commonsense spatial understanding ability for navigation task and can adaptively select safe navigation routes towards the goal without any maps.</figDesc><graphic coords="2,458.55,320.50,63.78,63.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Visualization of comparison among navigation approaches. Two common failure mode of baselines are displayed: (1) Collision caused by short-horizon memory and planning inconsistency. (2) Faked by the irregular object geometry. Our proposed NavDP can robustly handle both scenarios. The visualization is achieved by P i 3 [41].</figDesc><graphic coords="6,320.52,218.32,208.36,62.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: Trajectory visualization of on different robots. We project the predicted trajectories back to the image space and colorize them according to the corresponding critic values. The bluer trajectories indicate higher risk, whereas the redder trajectories represent safer paths.</figDesc><graphic coords="7,440.53,259.69,115.13,73.88" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 6 :</head><label>6</label><figDesc>Fig.6: Ablation study result on cross-embodiment dataset. The top row demonstrates the evaluation scenes while the bottom shows the performance. Without the crossembodiment data, the performance on Galaxea R1 drops 70% in success rate.</figDesc><graphic coords="7,314.81,346.28,247.63,121.53" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Shanghai AI Lab,</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Tsinghua University,</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Zhejiang University</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>The University of Hong Kong* Equal Contribution, † Corresponding Authors</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted"  xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Deep visual mpc-policy learning for navigation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hirose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sadeghian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="3184" to="3191" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Socially compliant navigation dataset (scand): A large-scale dataset of demonstrations for social navigation</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Karnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Warnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pirk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Sacson: Scalable autonomous control for social navigation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hirose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Straub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Whelan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Engel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mur-Artal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Verma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1906.05797</idno>
+		<title level="m">The replica dataset: A digital replica of indoor spaces</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Funkhouser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Halber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Niessner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1709.06158</idno>
+		<title level="m">Matterport3d: Learning from rgb-d data in indoor environments</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b5">
+	<analytic>
+		<title level="a" type="main">3d-front: 3d furnished rooms with layouts and semantics</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page">942</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Habitat synthetic scenes dataset (hssd-200): An analysis of 3d scene scale and realism tradeoffs for objectgoal navigation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Haresh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Shacklett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clegg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Undersander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">X</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">393</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Ramakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gokaslan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Maksymets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clegg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Turner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Undersander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Galuba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Westbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">X</forename><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.08238</idno>
+		<title level="m">Habitat-matterport 3d dataset (hm3d): 1000 large-scale 3d environments for embodied ai</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.10943</idno>
+		<title level="m">Grutopia: Dream general robots in a city at scale</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Aim my robot: Precision local navigation to any object</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ramos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Jujjavarapu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Nomad: Goal masked diffusion policies for navigation and exploration</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Glossop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="63" to="70" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Poliformer: Scaling onpolicy rl with transformers results in masterful navigators</title>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ehsani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hendrix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Salvador</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herrasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kembhavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weihs</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>in 8th Annual Conference on Robot Learning</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b12">
+	<monogr>
+		<title level="m" type="main">The one ring: a robotic indoor navigation generalist</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Eftekhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hendrix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Caglar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Salvador</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herrasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vanderbil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kembhavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.14401</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Diffusion policy: Visuomotor policy learning via action diffusion</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chi</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Feng</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cousineau</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Burchfiel</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems</meeting>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b14">
+	<monogr>
+		<title level="m" type="main">3d diffuser actor: Policy diffusion with 3d scene representations</title>
+		<author>
+			<persName><forename type="first">T.-W</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gkanatsios</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fragkiadaki</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.10885</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Crossway diffusion: Improving diffusion-based visuomotor policy via self-supervised learning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Belagali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Ryoo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">849</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Huo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ding</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01531</idno>
+		<title level="m">Sparse diffusion policy: A sparse, reusable, and flexible policy for robot learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b17">
+	<analytic>
+		<title level="a" type="main">3d diffusion policy: Generalizable visuomotor policy learning via simple 3d representations</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ze</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hu</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xu</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems</meeting>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Prasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.07503</idno>
+		<title level="m">Consistency policy: Accelerated visuomotor policies via consistency distillation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21257</idno>
+		<title level="m">One-step diffusion policy: Fast visuomotor policies via diffusion distillation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Diffuseloco: Real-time legged locomotion control with diffusion from offline datasets</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Nikolic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sreenath</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>in 8th Annual Conference on Robot Learning</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Generative category-level object pose estimation via diffusion models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Xskill: Cross embodiment skill discovery</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Veloso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3536" to="3555" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.07788</idno>
+		<title level="m">Dexcap: Scalable and portable mocap data collection system for dexterous manipulation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Gnm: A general navigation model to drive any robot</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bhorkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hirose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="7226" to="7233" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Vint: A foundation model for visual navigation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dashora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stachowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hirose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.14846</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cadena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.11434</idno>
+		<title level="m">iplanner: Imperative path planning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Viplanner: Visual semantic imperative learning for local navigation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mittal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hutter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="5243" to="5249" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Bridging zero-shot object navigation and foundation models through pixel-guided navigation skill</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="5228" to="5234" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Spoc: Imitating shortest paths in simulation enables effective navigation and manipulation in the real world</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ehsani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hendrix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Salvador</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">P</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herrasti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">250</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Navid: Video-based vlm plans the next step for vision-and-language navigation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Robotics: Science and Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Uni-navid: A video-based vision-languageaction model for unifying embodied navigation tasks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.06224</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Navila: Legged robot vision-language-action model for navigation</title>
+		<author>
+			<persName><forename type="first">A.-C</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Bıyık</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.04453</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Blenderproc: Reducing the reality gap with photorealistic rendering</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Denninger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sundermeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Winkelbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Olefir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hodan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zidan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Elbadrawy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Knauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Katam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lodhi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">16th Robotics: Science and Systems</title>
+		<imprint>
+			<publisher>Workshops</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">2020</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Gibson Env: real-world perception for embodied agents</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Zamir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z.-Y</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sax</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Rapid exploration for open-world navigation with latent goal models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rhinehart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.05859</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Depth anything v2</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="21" to="875" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Denoising diffusion probabilistic models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="6840" to="6851" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Dd-ppo: Learning near-perfect pointgoal navigators from 2.5 billion frames</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Morcos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Essa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Ego-planner: An esdffree gradient-based local planner for quadrotors</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="478" to="485" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted"  xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Scalable permutationequivariant visual geometry learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2507.13347" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

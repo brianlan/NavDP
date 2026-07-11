@@ -25,6 +25,33 @@ class RGBDEncoder(torch.nn.Module):
         return self.rgbd_encoder(images, depths)
 
 
+class RGBFrameEncoder(torch.nn.Module):
+    def __init__(self, policy):
+        super().__init__()
+        self.rgbd_encoder = policy.rgbd_encoder
+
+    def forward(self, image):
+        return self.rgbd_encoder.encode_rgb(image)
+
+
+class DepthFrameEncoder(torch.nn.Module):
+    def __init__(self, policy):
+        super().__init__()
+        self.rgbd_encoder = policy.rgbd_encoder
+
+    def forward(self, depth):
+        return self.rgbd_encoder.encode_depth(depth)
+
+
+class RGBDFusion(torch.nn.Module):
+    def __init__(self, policy):
+        super().__init__()
+        self.rgbd_encoder = policy.rgbd_encoder
+
+    def forward(self, rgb_tokens, depth_tokens):
+        return self.rgbd_encoder.fuse_tokens(rgb_tokens, depth_tokens)
+
+
 class PointGoalDenoiser(torch.nn.Module):
     def __init__(self, policy):
         super().__init__()
@@ -97,7 +124,10 @@ def main():
     batch = args.batch_size
     denoise_batch = args.batch_size * args.sample_num
     images = torch.rand(batch, 8, 224, 224, 3, device=args.device)
+    image = torch.rand(batch, 224, 224, 3, device=args.device)
     depths = torch.rand(batch, 224, 224, 1, device=args.device)
+    rgb_tokens = torch.rand(batch, 8 * 256, 384, device=args.device)
+    depth_tokens = torch.rand(batch, 256, 384, device=args.device)
     last_actions = torch.randn(denoise_batch, 24, 3, device=args.device)
     timestep = torch.tensor([9], dtype=torch.float32, device=args.device)
     point_goal = torch.randn(batch, 3, device=args.device)
@@ -106,6 +136,9 @@ def main():
 
     with torch.no_grad():
         print("rgbd_encoder output:", RGBDEncoder(policy)(images, depths).shape)
+        print("rgb_frame_encoder output:", RGBFrameEncoder(policy)(image).shape)
+        print("depth_frame_encoder output:", DepthFrameEncoder(policy)(depths).shape)
+        print("rgbd_fusion output:", RGBDFusion(policy)(rgb_tokens, depth_tokens).shape)
         print("pointgoal_encoder output:", PointGoalEncoder(policy)(point_goal).shape)
         print("denoiser output:", PointGoalDenoiser(policy)(last_actions, timestep, goal_embed, rgbd_embed).shape)
         print("critic output:", Critic(policy)(last_actions, rgbd_embed).shape)
@@ -116,6 +149,27 @@ def main():
         (images, depths),
         os.path.join(args.output_dir, f"navdp_rgbd_encoder_{suffix}.onnx"),
         ["images", "depths"],
+        ["rgbd_embed"],
+    )
+    export_and_check(
+        RGBFrameEncoder(policy),
+        (image,),
+        os.path.join(args.output_dir, f"navdp_rgb_frame_encoder_b{batch}.onnx"),
+        ["image"],
+        ["rgb_tokens"],
+    )
+    export_and_check(
+        DepthFrameEncoder(policy),
+        (depths,),
+        os.path.join(args.output_dir, f"navdp_depth_frame_encoder_b{batch}.onnx"),
+        ["depth"],
+        ["depth_tokens"],
+    )
+    export_and_check(
+        RGBDFusion(policy),
+        (rgb_tokens, depth_tokens),
+        os.path.join(args.output_dir, f"navdp_rgbd_fusion_b{batch}.onnx"),
+        ["rgb_tokens", "depth_tokens"],
         ["rgbd_embed"],
     )
     export_and_check(
